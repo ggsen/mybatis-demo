@@ -7,6 +7,7 @@ import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import lombok.Data;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -14,14 +15,16 @@ import java.util.stream.Collectors;
 public class SsqNumberGenerateV2 {
     private static final String BASE_URL = "http://www.cwl.gov.cn/cwl_admin/kjxx/findDrawNotice?name=ssq&issueCount=";
 
-    private static final int BUY_COUNT = 3;
+    private static final int BUY_COUNT = 5;
 
     private static final int RED_MOST_COUNT = 6;
 
     private static final int BLUE_MOST_COUNT = 6;
 
+    private static final int LAST_COUNT = 50;
+
     public static void main(String[] args) {
-        HttpRequest request = HttpUtil.createGet(BASE_URL + "100");
+        HttpRequest request = HttpUtil.createGet(BASE_URL + LAST_COUNT);
         request.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36");
         request.header("Referer", "http://www.cwl.gov.cn/kjxx/ssq/kjgg/");
         request.header("host", "www.cwl.gov.cn");
@@ -29,6 +32,7 @@ public class SsqNumberGenerateV2 {
         HttpResponse response = request.execute();
         if (!response.isOk()) {
             System.out.println(String.format("%s, %s", "请求失败T_T!!", response.body()));
+            return;
         }
 
         String body = response.body();
@@ -41,19 +45,11 @@ public class SsqNumberGenerateV2 {
         ssqNumberList.stream().forEach(ssqNumber -> {
             String[] redArray = ssqNumber.getRed().split(",");
             for (String red : redArray) {
-                if (redMap.get(red) == null) {
-                    redMap.put(red, 1);
-                } else {
-                    redMap.put(red, redMap.get(red) + 1);
-                }
+                redMap.put(red, redMap.get(red) == null ? 1 : redMap.get(red) + 1);
             }
 
             String blue = ssqNumber.getBlue();
-            if (blueMap.get(blue) == null) {
-                blueMap.put(blue, 1);
-            } else {
-                blueMap.put(blue, blueMap.get(blue) + 1);
-            }
+            blueMap.put(blue, blueMap.get(blue) == null ? 1 : blueMap.get(blue) + 1);
         });
         List<String> mostReds = getMostNumbers(redMap, RED_MOST_COUNT);
         List<String> mostBlues = getMostNumbers(blueMap, BLUE_MOST_COUNT);
@@ -97,6 +93,7 @@ public class SsqNumberGenerateV2 {
                 .collect(Collectors.toList());
     }
 
+    @Data
     class SsqNumber {
         /**
          * 开奖日期
@@ -117,47 +114,5 @@ public class SsqNumberGenerateV2 {
          * 蓝球
          */
         private String blue;
-
-        public String getDate() {
-            return date;
-        }
-
-        public void setDate(String date) {
-            this.date = date;
-        }
-
-        public String getRed() {
-            return red;
-        }
-
-        public void setRed(String red) {
-            this.red = red;
-        }
-
-        public List<String> getRedList() {
-            return redList;
-        }
-
-        public void setRedList(List<String> redList) {
-            this.redList = redList;
-        }
-
-        public String getBlue() {
-            return blue;
-        }
-
-        public void setBlue(String blue) {
-            this.blue = blue;
-        }
-
-        @Override
-        public String toString() {
-            return "SsqNumber{" +
-                    "date='" + date + '\'' +
-                    ", red='" + red + '\'' +
-                    ", redList=" + redList +
-                    ", blue='" + blue + '\'' +
-                    '}';
-        }
     }
 }
